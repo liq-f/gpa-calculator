@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>绩点计算器 · 学期 / 总平均绩点</title>
+<style>
+:root{
+  --bg:#f4f5f9; --card:#ffffff; --card2:#fafbfe; --text:#171a22; --muted:#6b7280;
+  --line:#e6e8f0; --line2:#eef0f6; --accent:#4f46e5; --accent-soft:#eef0ff;
+  --ok:#0f9d63; --warn:#d97706; --warn-soft:#fff5e6; --danger:#dc2626;
+  --shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -12px rgba(20,24,40,.18);
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1016; --card:#171a22; --card2:#1c2029; --text:#e9ebf2; --muted:#98a0b0;
+    --line:#282d39; --line2:#232833; --accent:#8b8cf7; --accent-soft:#24243c;
+    --ok:#34d399; --warn:#fbbf24; --warn-soft:#2c2415; --danger:#f87171;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;max-width:100%}
+input,select,textarea{min-width:0}
+body{
+  background:var(--bg); color:var(--text);
+  font:15px/1.55 "PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+button{font:inherit;color:inherit}
+input,textarea{font:inherit;color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:18px 16px 64px}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 13px;border-radius:10px;border:1px solid var(--line);
+  background:var(--card);cursor:pointer;font-size:14px;white-space:nowrap;
+  transition:.15s background,.15s border-color,.15s transform;
+}
+.btn:hover{background:var(--card2);border-color:var(--accent)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.primary:hover{filter:brightness(1.08);background:var(--accent)}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--danger)}
+.btn.danger:hover{border-color:var(--danger)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.icon-btn{
+  border:1px solid transparent;background:transparent;color:var(--muted);
+  width:28px;height:28px;border-radius:8px;cursor:pointer;line-height:1;font-size:15px;
+}
+.icon-btn:hover{background:var(--accent-soft);color:var(--accent)}
+
+/* ---------- top ---------- */
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{
+  width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;font-weight:800;font-size:15px;letter-spacing:.5px;
+}
+.brand h1{margin:0;font-size:19px;letter-spacing:.3px}
+.brand p{margin:1px 0 0;font-size:12.5px;color:var(--muted)}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---------- hero ---------- */
+.hero{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:16px 18px;display:grid;gap:0 18px;
+  grid-template-columns:minmax(186px,212px) minmax(0,1fr) minmax(0,1fr);
+  align-items:start;margin-bottom:14px;
+}
+.hero-main{padding-right:16px}
+.hero-group{min-width:0;display:flex;flex-direction:column;gap:6px;border-left:1px dashed var(--line);padding-left:18px}
+.hero-group-title{font-size:12.5px;color:var(--muted);letter-spacing:.5px;display:flex;align-items:center;gap:6px}
+.hero-group-title b{color:var(--text);font-weight:600}
+.hero-label{font-size:13px;color:var(--muted);letter-spacing:.5px}
+.hero-val{font-size:46px;font-weight:800;line-height:1.1;letter-spacing:-1px;color:var(--accent);font-variant-numeric:tabular-nums}
+.hero-val.empty{color:var(--muted);font-size:34px}
+.hero-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.hero-formula{font-size:12px;color:var(--muted);margin-top:8px;background:var(--card2);border:1px solid var(--line2);border-radius:8px;padding:5px 8px;display:inline-block}
+.bars{display:flex;flex-direction:column;gap:6px;max-height:198px;overflow:auto}
+.bar-row{
+  display:grid;grid-template-columns:88px 1fr 54px;align-items:center;gap:8px;
+  background:none;border:0;padding:3px 4px;border-radius:8px;cursor:pointer;text-align:left;
+}
+.bar-row:hover{background:var(--card2)}
+.bar-row.active{background:var(--accent-soft)}
+.bar-name{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-row.active .bar-name{color:var(--accent);font-weight:600}
+.bar-track{height:9px;border-radius:99px;background:var(--line2);overflow:hidden}
+.bar-track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),#8b5cf6)}
+.bar-row.strong .bar-track{height:11px}
+.bar-row.strong .bar-val{font-size:14px;color:var(--accent)}
+.bar-val{font-size:13px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.bar-empty{font-size:12.5px;color:var(--muted);line-height:1.5}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.tab{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 10px 7px 14px;border-radius:99px;
+  border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:13.5px;max-width:230px;
+}
+.tab:hover{border-color:var(--accent)}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.tab .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tab b{font-variant-numeric:tabular-nums;opacity:.85;font-weight:600}
+.tab .x{opacity:.5;font-size:12px;border-radius:50%;width:17px;height:17px;display:grid;place-items:center}
+.tab .x:hover{opacity:1;background:rgba(128,128,128,.25)}
+.tab.add{border-style:dashed;color:var(--muted);padding:7px 14px}
+.tab.add:hover{color:var(--accent)}
+
+/* ---------- panel ---------- */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.panel-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--line2);background:var(--card2)}
+.sem-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sem-input{
+  border:1px solid transparent;background:transparent;font-size:16px;font-weight:700;
+  padding:4px 6px;border-radius:8px;width:11.5em;min-width:7em;
+}
+.sem-input:hover{border-color:var(--line)}
+.sem-input:focus{outline:none;border-color:var(--accent);background:var(--card);cursor:text}
+.field{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:2px 9px}
+.field label{font-size:12px;color:var(--muted);white-space:nowrap}
+.field:hover{border-color:var(--accent)}
+.year-input{border:0;background:transparent;font-size:14.5px;font-weight:700;color:var(--accent);width:6.6em;padding:5px 0}
+.year-input:focus{outline:none}
+.chip{font-size:12.5px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:99px;padding:3px 10px;white-space:nowrap}
+.chip b{color:var(--text);font-variant-numeric:tabular-nums}
+.chip.hi b{color:var(--accent);font-size:14px}
+.panel-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---------- table ---------- */
+.table-wrap{overflow-x:auto}
+table.courses{width:100%;border-collapse:collapse;min-width:560px}
+table.courses th{
+  text-align:left;font-size:12.5px;font-weight:600;color:var(--muted);
+  padding:9px 12px;border-bottom:1px solid var(--line2);white-space:nowrap;background:var(--card);
+}
+table.courses td{padding:4px 8px;border-bottom:1px solid var(--line2);vertical-align:middle}
+table.courses tr:last-child td{border-bottom:0}
+table.courses tr:hover td{background:var(--card2)}
+table.courses tr.off{opacity:.42}
+table.courses tr.need-check td{background:var(--warn-soft)}
+table.courses tr.flash td{animation:flash 1.6s ease-out}
+@keyframes flash{0%{background:var(--accent-soft)}100%{background:transparent}}
+.cell{
+  width:100%;border:1px solid transparent;background:transparent;border-radius:8px;
+  padding:7px 9px;font-size:14px;transition:.12s;
+}
+.cell:hover{border-color:var(--line)}
+.cell:focus{outline:none;border-color:var(--accent);background:var(--card);box-shadow:0 0 0 3px var(--accent-soft)}
+.cell.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;max-width:110px}
+.cell.hl{color:var(--accent)}
+th.c-num,td.c-num{width:104px}
+th.c-flg,td.c-flg{width:56px;text-align:center}
+th.c-del,td.c-del{width:44px;text-align:center}
+td.c-name{min-width:180px}
+input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent);cursor:pointer}
+.empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:13.5px}
+.row-note{font-size:11px;color:var(--warn);white-space:nowrap}
+.panel-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 16px;border-top:1px solid var(--line2);background:var(--card2);font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+
+/* ---------- modal ---------- */
+.modal{position:fixed;inset:0;background:rgba(12,14,22,.5);backdrop-filter:blur(2px);display:none;z-index:50;padding:20px;overflow:auto}
+.modal.open{display:block}
+.modal-card{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;max-width:820px;margin:24px auto;
+  box-shadow:0 30px 70px -30px rgba(0,0,0,.6);overflow:hidden;
+}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line2)}
+.modal-head h2{margin:0;font-size:16px}
+.modal-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px;max-height:66vh;overflow:auto}
+.modal-foot{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:13px 18px;border-top:1px solid var(--line2);background:var(--card2);flex-wrap:wrap}
+.foot-actions{display:flex;gap:8px;flex-wrap:wrap}
+.drop{
+  border:2px dashed var(--line);border-radius:14px;padding:22px;text-align:center;cursor:pointer;
+  background:var(--card2);transition:.15s;
+}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop-ico{font-size:26px}
+.drop p{margin:6px 0 0;font-size:13.5px}
+.muted{color:var(--muted);font-size:12.5px}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap}
+.thumb{position:relative;width:82px;height:82px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb button{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:50%;width:19px;height:19px;cursor:pointer;font-size:11px;line-height:1}
+.row-inline{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.select{
+  border:1px solid var(--line);background:var(--card);border-radius:9px;padding:7px 10px;
+  font-size:14px;cursor:pointer;max-width:22em;
+}
+.select:hover{border-color:var(--accent)}
+.select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.rule-table{border:1px solid var(--line);border-radius:10px;overflow:auto;background:var(--card);max-height:46vh}
+.rule-head,.rule-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 34px;align-items:center;gap:8px;padding:3px 10px}
+.rule-head{background:var(--card2);font-size:12px;color:var(--muted);border-bottom:1px solid var(--line2);padding:6px 10px;position:sticky;top:0;z-index:1}
+.rule-row{border-bottom:1px solid var(--line2)}
+.rule-row:last-child{border-bottom:0}
+.rule-row .cell{
+  text-align:right;font-variant-numeric:tabular-nums;font-weight:600;
+  font-size:13.5px;padding:3px 8px;line-height:1.35;
+}
+.rule-row .cell:hover{border-color:var(--line)}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;cursor:pointer;user-select:none}
+.progress{height:5px;background:var(--line2);border-radius:99px;overflow:hidden}
+.progress-bar{height:100%;width:0;background:var(--accent);transition:width .25s}
+details.rawbox{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--card2)}
+details.rawbox summary{cursor:pointer;font-size:13.5px;font-weight:600}
+#rawText{
+  width:100%;margin-top:8px;min-height:110px;resize:vertical;border:1px solid var(--line);
+  border-radius:8px;padding:9px;background:var(--card);font-family:ui-monospace,Consolas,monospace;font-size:12.5px;line-height:1.6;
+}
+#rawText:focus{outline:none;border-color:var(--accent)}
+.preview{border:1px solid var(--line);border-radius:10px;overflow:hidden;display:none}
+.preview.show{display:block}
+.preview table{width:100%;border-collapse:collapse;font-size:13px}
+.preview th,.preview td{padding:7px 10px;border-bottom:1px solid var(--line2);text-align:left}
+.preview th{background:var(--card2);color:var(--muted);font-weight:600;font-size:12px}
+.preview tr:last-child td{border-bottom:0}
+.preview .warnrow td{background:var(--warn-soft)}
+.preview td.n{text-align:right;font-variant-numeric:tabular-nums}
+.badge{font-size:11px;border-radius:99px;padding:2px 7px;background:var(--line2);color:var(--muted)}
+.badge.w{background:var(--warn-soft);color:var(--warn)}
+.toast{
+  position:fixed;left:50%;bottom:28px;transform:translate(-50%,14px);background:#1f2330;color:#fff;
+  padding:10px 18px;border-radius:99px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:99;max-width:90vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.help h3{margin:14px 0 6px;font-size:14.5px}
+.help p,.help li{font-size:13.5px;color:var(--muted);margin:5px 0}
+.help code{background:var(--card2);border:1px solid var(--line2);border-radius:6px;padding:1px 6px;font-size:12.5px;color:var(--text)}
+.help table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.help th,.help td{border:1px solid var(--line2);padding:5px 9px;text-align:left;color:var(--muted)}
+.help th{background:var(--card2);color:var(--text)}
+
+@media (max-width:1000px){
+  .hero{grid-template-columns:minmax(170px,1fr) minmax(0,1fr);gap:12px 18px}
+  .hero-main{grid-column:1 / -1;padding-right:0;border-bottom:1px dashed var(--line);padding-bottom:12px}
+  .hero-group{border-left:0;padding-left:0}
+  .hero-group + .hero-group{border-left:1px dashed var(--line);padding-left:18px}
+}
+@media (max-width:720px){
+  .hero{grid-template-columns:minmax(0,1fr);padding:14px}
+  .hero-main{border-bottom:1px dashed var(--line);padding:0 0 12px}
+  .hero-group + .hero-group{border-left:0;border-top:1px dashed var(--line);padding:12px 0 0}
+  .hero-group{padding:0}
+  .hero-val{font-size:38px}
+  .wrap{padding:12px 10px 60px}
+  .brand h1{font-size:17px}
+  .tabs{gap:6px}
+  .panel-head{padding:11px 12px}
+  .sem-input{width:8em;font-size:15px}
+}
+@media (max-width:620px){
+  table.courses{display:block;min-width:0;table-layout:fixed}
+  table.courses thead{display:none}
+  table.courses tbody{display:block}
+  table.courses tr{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:2px 8px;
+    padding:9px 6px;border-bottom:1px solid var(--line2);position:relative;
+  }
+  table.courses td{display:flex;align-items:center;gap:8px;border:0;padding:2px 6px;width:auto!important;min-width:0}
+  table.courses td.c-name{grid-column:1 / -1;padding-right:32px}
+  table.courses td.c-name::before,
+  table.courses td.c-num::before,
+  table.courses td.c-flg::before{
+    content:attr(data-label);font-size:11.5px;color:var(--muted);flex:0 0 auto;min-width:2.2em;
+  }
+  table.courses td.c-del{position:absolute;top:8px;right:2px;width:28px!important}
+  .cell{min-width:0}
+  .cell.num{max-width:none}
+  .panel-actions .btn{font-size:13px;padding:7px 10px}
+  .tools .btn{font-size:13px;padding:7px 10px}
+}
+@media (max-width:400px){
+  .bar-row{grid-template-columns:74px 1fr 48px}
+  .brand p{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">GPA</div>
+      <div>
+        <h1>绩点计算器</h1>
+        <p>学分加权 · 学期 / 学年 / 总平均绩点 · 绩点可随时手改</p>
+      </div>
+    </div>
+    <div class="tools">
+      <button class="btn ghost" id="btnHelp">使用说明</button>
+      <button class="btn ghost" id="btnDemo">载入示例</button>
+      <button class="btn ghost" id="btnCsv">导出 Excel(CSV)</button>
+      <button class="btn ghost" id="btnBackup">备份</button>
+      <button class="btn ghost" id="btnRestore">恢复</button>
+      <button class="btn ghost danger" id="btnReset">清空</button>
+      <input type="file" id="restoreInput" accept=".json,application/json" hidden>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-main">
+      <div class="hero-label">总平均绩点</div>
+      <div class="hero-val empty" id="overallGpa">--</div>
+      <div class="hero-sub" id="overallMeta">还没有数据</div>
+      <div class="hero-formula">Σ(学分 × 绩点) ÷ Σ学分</div>
+    </div>
+    <div class="hero-group">
+      <div class="hero-group-title">学年平均绩点 <b id="yearCount"></b></div>
+      <div class="bars" id="yearBars"></div>
+    </div>
+    <div class="hero-group">
+      <div class="hero-group-title">学期平均绩点 <b id="semCount"></b></div>
+      <div class="bars" id="bars"></div>
+    </div>
+  </section>
+
+  <nav class="tabs" id="tabs"></nav>
+  <section class="panel" id="panel"></section>
+</div>
+
+<!-- 导入弹窗 -->
+<div class="modal" id="importModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>图片 / 文本导入</h2>
+      <button class="icon-btn" data-close="importModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="drop" id="dropzone">
+        <input type="file" id="fileInput" accept="image/*" multiple hidden>
+        <div class="drop-ico">🖼</div>
+        <p><b>点击选择图片</b>，或把成绩单 / 教务系统截图拖到这里</p>
+        <p class="muted">支持多张；识别结果一律进入可编辑表格，请你核对修改</p>
+      </div>
+      <div class="thumbs" id="thumbs"></div>
+      <div class="row-inline">
+        <button class="btn primary" id="btnOcr">开始识别</button>
+        <label class="chk"><input type="checkbox" id="optEnhance" checked> 图像增强（提高识别率）</label>
+        <label class="chk"><input type="checkbox" id="optEn" checked> 同时识别英文/课程代码</label>
+        <span class="muted" id="ocrStatus"></span>
+      </div>
+      <div class="progress"><div class="progress-bar" id="ocrProgress"></div></div>
+      <details class="rawbox" open>
+        <summary>识别原文（可手动修正后重新解析）</summary>
+        <textarea id="rawText" spellcheck="false" placeholder="识别结果会出现在这里。也可以直接把成绩单文字粘贴进来，再点「重新解析」。"></textarea>
+      </details>
+      <div class="row-inline">
+        <button class="btn" id="btnReparse">重新解析</button>
+        <span class="muted" id="parseInfo">尚未解析</span>
+      </div>
+      <div class="preview" id="preview"></div>
+    </div>
+    <div class="modal-foot">
+      <div class="muted" id="targetInfo"></div>
+      <div class="foot-actions">
+        <button class="btn ghost" data-close="importModal">取消</button>
+        <button class="btn" id="btnReplace">替换当前学期</button>
+        <button class="btn primary" id="btnAppend">追加到当前学期</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 换算规则弹窗 -->
+<div class="modal" id="ruleModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>成绩 → 绩点 换算规则</h2>
+      <button class="icon-btn" data-close="ruleModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="row-inline">
+        <label class="chk" for="rulePreset">预设</label>
+        <select id="rulePreset" class="select"></select>
+        <span class="muted">选预设可一键套用，也可以直接改下面的分档</span>
+      </div>
+      <div class="rule-table" id="ruleTable"></div>
+      <div class="row-inline">
+        <button class="btn" id="btnAddBand">＋ 添加一档</button>
+        <span class="muted">从高到低匹配：分数 ≥ 下界就取该档绩点，低于最低档记 0 分</span>
+      </div>
+      <p class="muted">规则只用于「成绩→绩点」按钮，以及识别时只认出分数、没认出绩点的课程；折算后每门课仍可手动改。</p>
+    </div>
+    <div class="modal-foot">
+      <div class="muted" id="rulePreview"></div>
+      <div class="foot-actions">
+        <button class="btn ghost" data-close="ruleModal">取消</button>
+        <button class="btn" id="btnRuleReset">恢复默认</button>
+        <button class="btn primary" id="btnRuleSave">保存规则</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 说明弹窗 -->
+<div class="modal" id="helpModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>使用说明</h2>
+      <button class="icon-btn" data-close="helpModal">✕</button>
+    </div>
+    <div class="modal-body help">
+      <h3>1. 计算规则</h3>
+      <p>学期平均绩点 = 本学期 <code>Σ(学分 × 绩点) ÷ Σ学分</code></p>
+      <p>学年平均绩点 = 同一学年内所有学期合计 <code>Σ(学分 × 绩点) ÷ Σ学分</code></p>
+      <p>总平均绩点 = 所有学期合计 <code>Σ(学分 × 绩点) ÷ Σ学分</code>（按学分加权，不是各学期简单平均）</p>
+      <p>勾掉某门课的「计入」即可让它不参与任何计算（体育、通识、重修前成绩等）。</p>
+      <p>只有学分、没填绩点的课程：不参与绩点计算，但会出现在「缺绩点」提示里。</p>
+
+      <h3>2. 学年怎么划分</h3>
+      <p>每个学期都有一个「学年」名字（默认：前两个学期＝大一，第三四个＝大二，依此类推）。<b>名字相同的学期会自动汇总成一个学年</b>，所以：</p>
+      <ul>
+        <li>想按「大一／大二／大三／大四」看，保持默认即可；</li>
+        <li>想按真实学年看，把它改成 <code>2024-2025学年</code> 这种写法；</li>
+        <li>只想按学年统计、不区分上下学期，那就一个学年只建一个学期。</li>
+      </ul>
+      <p>顶部左侧就是各学年平均绩点，点一下可以直接跳到该学年的第一个学期。改学年名字在课程表上方的「学年」输入框里，改完立刻重算。</p>
+
+      <h3>3. 手动录入</h3>
+      <p>点「+ 添加课程」加行，直接在表格里改课程名 / 学分 / <b>绩点</b>。绩点列任何时刻都能手改，支持小数（如 3.7、4.5）。</p>
+      <p>小技巧：在最后一行的输入框按 <code>Enter</code> 会自动新增一行；从 Excel 复制多行（带制表符）直接粘到表格里会自动拆成多门课。</p>
+
+      <h3>4. 图片识别（OCR）</h3>
+      <p>点「图片 / 文本导入」→ 选图或拖图 → 「开始识别」。首次使用需要联网下载识别引擎和中文语言包（之后浏览器会缓存，可离线再用）。</p>
+      <p>识别属于机器识别，<b>一定会有误差</b>：分数、学分小数点是重灾区。导入后请对着原截图核对一遍，识别不准的行会以黄色高亮提示。识别不理想时可以先在「识别原文」里改文字，再点「重新解析」，通常比重新识别更快。</p>
+      <p>截图建议：整屏截图、不要缩放糊掉、表格一行的内容尽量在同一行。</p>
+
+      <h3>5. 成绩 → 绩点 折算（可选）</h3>
+      <p>如果成绩单只有百分制分数，点学期里的「成绩→绩点」折算，<b>只填还没有绩点的行</b>，折算后每门课仍可手动改。</p>
+      <p><b>换算规则是各校自定的，可以改。</b>点旁边的「⚙ 换算规则」按钮：</p>
+      <ul>
+        <li>内置几个常见预设（常用 4.0 制、简易 4.0 制、严格 4.0 制、5.0 制等），选一下就能套用；</li>
+        <li>也可以直接改分档表：每行填「分数 ≥ 多少 → 记多少绩点」，可增删档位；</li>
+        <li>规则会一直记住，OCR 识别时只认出分数、没认出绩点的课也按这套规则折算。</li>
+      </ul>
+      <p>默认规则（常用 4.0 制）：</p>
+      <table>
+        <tr><th>百分制</th><td>90-100</td><td>85-89</td><td>82-84</td><td>78-81</td><td>75-77</td><td>72-74</td><td>68-71</td><td>64-67</td><td>60-63</td><td>&lt;60</td></tr>
+        <tr><th>绩点</th><td>4.0</td><td>3.7</td><td>3.3</td><td>3.0</td><td>2.7</td><td>2.3</td><td>2.0</td><td>1.5</td><td>1.0</td><td>0</td></tr>
+      </table>
+      <p>五级制：优=4.0、良=3.0、中=2.0、及格=1.0、不及格=0（这部分固定，不随规则变）。</p>
+
+      <h3>6. 数据保存</h3>
+      <p>所有数据只存在你这台电脑的浏览器本地（localStorage），不上传任何服务器，也不联网（OCR 除外）。</p>
+      <p>换电脑、换浏览器或清理浏览器数据会丢失记录，建议偶尔点右上角「备份」导出一份 JSON，需要时用「恢复」读回来（换算规则也会一起备份）。</p>
+      <p>「图片 / 文本导入」里的识别原文和解析结果每次重新打开都会清空，不会残留上一次的内容。</p>
+    </div>
+    <div class="modal-foot">
+      <div class="muted">绩点公式与折算方式都可自行调整，算出来的数请以学校教务系统为准。</div>
+      <div class="foot-actions"><button class="btn primary" data-close="helpModal">知道了</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+ * 工具函数
+ * ========================================================== */
+var CN = ['一','二','三','四','五','六','七','八','九','十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十'];
+var uidN = 0;
+function nid(p){ uidN++; return p + Date.now().toString(36) + uidN.toString(36); }
+
+function esc(s){
+  return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function(m){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+  });
+}
+function numOrNull(v){
+  if (v === '' || v === null || v === undefined) return null;
+  var n = Number(String(v).replace(/[^\d.\-]/g,''));
+  return isFinite(n) ? n : null;
+}
+function fmt2(x){ return (x === null || x === undefined || !isFinite(x)) ? '--' : x.toFixed(2); }
+function fmtNum(x){
+  if (x === null || x === undefined || !isFinite(x)) return '0';
+  var r = Math.round(x * 100) / 100;
+  return String(r);
+}
+function $(id){ return document.getElementById(id); }
+function setText(id, v){ var e = $(id); if (e) e.textContent = v; }
+function toast(msg){
+  var t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+}
+
+/* ============================================================
+ * 解析模块（纯函数，便于测试）
+ * ========================================================== */
+/* ==PARSER_START== */
+function normalizeDigits(s){
+  return String(s)
+    .replace(/[\uFF10-\uFF19]/g, function(ch){ return String.fromCharCode(ch.charCodeAt(0) - 0xFEE0); })
+    .replace(/[\uFF0E\u3002]/g, '.')
+    .replace(/[\uFF1A]/g, ':')
+    .replace(/\u3000/g, ' ');
+}
+
+var GRADE_WORDS = [
+  { re: /(优秀|优)\s*$/, label:'优',   gpa:4.0 },
+  { re: /(良好|良)\s*$/, label:'良',   gpa:3.0 },
+  { re: /(中等|中)\s*$/, label:'中',   gpa:2.0 },
+  { re: /(及格|合格|通过|pass)\s*$/i, label:'及格', gpa:1.0 },
+  { re: /(不及格|不合格|未通过|fail)\s*$/i, label:'不及格', gpa:0 }
+];
+
+/* ---- 成绩 → 绩点 换算规则（可切换预设、可自定义分档）---- */
+var RULE_PRESETS = [
+  { id:'g40', name:'常用 4.0 制（90 满绩）', bands:[
+      { min:90, gpa:4.0 }, { min:85, gpa:3.7 }, { min:82, gpa:3.3 }, { min:78, gpa:3.0 }, { min:75, gpa:2.7 },
+      { min:72, gpa:2.3 }, { min:68, gpa:2.0 }, { min:64, gpa:1.5 }, { min:60, gpa:1.0 }, { min:0, gpa:0 } ] },
+  { id:'g40s', name:'简易 4.0 制（90/80/70/60）', bands:[
+      { min:90, gpa:4.0 }, { min:80, gpa:3.0 }, { min:70, gpa:2.0 }, { min:60, gpa:1.0 }, { min:0, gpa:0 } ] },
+  { id:'g40x', name:'严格 4.0 制（85 才满绩）', bands:[
+      { min:85, gpa:4.0 }, { min:75, gpa:3.0 }, { min:65, gpa:2.0 }, { min:60, gpa:1.0 }, { min:0, gpa:0 } ] },
+  { id:'g50', name:'常用 5.0 制（90 满绩）', bands:[
+      { min:90, gpa:5.0 }, { min:85, gpa:4.5 }, { min:80, gpa:4.0 }, { min:75, gpa:3.5 }, { min:70, gpa:3.0 },
+      { min:65, gpa:2.5 }, { min:60, gpa:1.5 }, { min:0, gpa:0 } ] },
+  { id:'g50b', name:'5.0 制（每 10 分一档）', bands:[
+      { min:90, gpa:5.0 }, { min:80, gpa:4.0 }, { min:70, gpa:3.0 }, { min:60, gpa:2.0 }, { min:0, gpa:0 } ] }
+];
+var DEFAULT_BANDS = RULE_PRESETS[0].bands;
+var activeBands = DEFAULT_BANDS.slice();
+
+function sortBandsDesc(bands){
+  return bands.slice().sort(function(a, b){ return b.min - a.min; });
+}
+function setActiveBands(bands){
+  activeBands = sortBandsDesc(bands && bands.length ? bands : DEFAULT_BANDS);
+}
+/* 分数从高到低匹配第一档：分数 ≥ 下界 即取该档绩点；低于最低档记 0 */
+function gpaFromBands(score, bands){
+  if (score === null || score === undefined || !isFinite(score)) return null;
+  var list = sortBandsDesc((bands && bands.length) ? bands : activeBands);
+  for (var i = 0; i < list.length; i++){
+    if (score >= list[i].min) return list[i].gpa;
+  }
+  return 0;
+}
+function scoreToGpa(score){ return gpaFromBands(score, activeBands); }
+function presetOf(bands){
+  for (var i = 0; i < RULE_PRESETS.length; i++){
+    if (sameBands(RULE_PRESETS[i].bands, bands)) return RULE_PRESETS[i];
+  }
+  return null;
+}
+function sameBands(a, b){
+  if (!a || !b || a.length !== b.length) return false;
+  var A = sortBandsDesc(a), B = sortBandsDesc(b);
+  for (var i = 0; i < A.length; i++){
+    if (Number(A[i].min) !== Number(B[i].min) || Number(A[i].gpa) !== Number(B[i].gpa)) return false;
+  }
+  return true;
+}
+
+/* OCR 常在汉字之间、括号前后插空格，这里还原成人看的课程名 */
+function tightenCJK(s){
+  var prev, guard = 0;
+  do {
+    prev = s;
+    s = s.replace(/([\u4e00-\u9fa5])\s+(?=[\u4e00-\u9fa5])/g, '$1');      // 汉字 汉字
+    s = s.replace(/([\u4e00-\u9fa5])\s+(?=[（(\[【《])/g, '$1');           // 汉字 (
+    s = s.replace(/([）)\]】》])\s+(?=[\u4e00-\u9fa5])/g, '$1');           // ) 汉字
+    s = s.replace(/\s+(?=[）)\]】》，,。;；:：])/g, '');                     // 收尾标点前的空格
+    s = s.replace(/([（(\[【《])\s+/g, '$1');                              // 括号后的空格
+    s = s.replace(/([\u4e00-\u9fa5])\s+(?=[A-Za-z0-9])/g, '$1');          // 汉字 英文/数字（如 大学英语 A）
+    s = s.replace(/([A-Za-z0-9])\s+(?=[\u4e00-\u9fa5])/g, '$1');
+  } while (s !== prev && guard++ < 6);
+  return s.replace(/\s{2,}/g, ' ').trim();
+}
+
+function cleanCourseName(s){
+  var n = String(s)
+    .replace(/^\s*\d{1,3}\s*[.、,，:：]?\s+/, '')      // 行首序号
+    .replace(/^[\-–—•·*|:：\s]+/, '')
+    .replace(/[\-–—•·*|:：\s]+$/, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  n = tightenCJK(n);
+  var words = ['必修课','选修课','必修','选修','限选','任选','公选','专业课','公共课','学位课','考试','考查'];
+  var changed = true, guard = 0;
+  while (changed && guard++ < 6){
+    changed = false;
+    for (var i = 0; i < words.length; i++){
+      var w = words[i];
+      if (n.length - w.length >= 3 && n.slice(-w.length) === w){
+        n = n.slice(0, -w.length).replace(/[\s\-–—]+$/, '').trim();
+        changed = true;
+      }
+    }
+  }
+  return n;
+}
+
+/* 判定尾部数字串：学分 / 绩点 / 成绩 */
+function classifyNumbers(pool){
+  var res = { credits:null, gpa:null, score:null, warn:false };
+  var t = pool.slice();
+
+  // 明显不是成绩/学分/绩点的数字（学号、课程号、年份等）→ 整行作废
+  for (var z = 0; z < t.length; z++){
+    if (!isFinite(t[z]) || t[z] < 0 || t[z] > 100){
+      return { credits:null, gpa:null, score:null, warn:true, invalid:true };
+    }
+  }
+
+  // 成绩：45~100 之间（优先整数）
+  var si = -1, i;
+  for (i = 0; i < t.length; i++){ if (t[i] > 45 && t[i] <= 100 && Number.isInteger(t[i])) { si = i; break; } }
+  if (si < 0){ for (i = 0; i < t.length; i++){ if (t[i] >= 45 && t[i] <= 100) { si = i; break; } } }
+  if (si >= 0) res.score = t.splice(si, 1)[0];
+
+  if (t.length === 1){
+    if (t[0] > 0 && t[0] <= 10) res.credits = t[0];
+    else res.warn = true;
+  } else if (t.length >= 2){
+    var left = t[0], right = t[t.length - 1];
+    if (left > 0 && left <= 10) res.credits = left; else res.warn = true;
+    if (right >= 0 && right <= 5) res.gpa = right;
+    else if (right > 5 && right <= 10 && (res.credits === null || left > 10)){ res.credits = right; res.gpa = (left <= 5 ? left : null); }
+    else res.warn = true;
+    if (t.length > 2) res.warn = true;
+  } else if (t.length === 0){
+    res.warn = true;
+  }
+  if (res.credits === null) res.warn = true;
+  return res;
+}
+
+function parseScoreText(text){
+  var rows = [];
+  if (!text) return rows;
+  var lines = normalizeDigits(text).split(/\r?\n/);
+
+  for (var li = 0; li < lines.length; li++){
+    var line = lines[li].replace(/[|｜\t]+/g, ' ').replace(/ {2,}/g, ' ').trim();
+    if (!line) continue;
+    if (/合计|总计|平均|总学分|汇总|备注|打印|第\s*\d+\s*页|教务/.test(line)) continue;
+
+    var hasDigit = /\d/.test(line);
+    var gradeHit = null;
+    for (var g = 0; g < GRADE_WORDS.length; g++){
+      if (GRADE_WORDS[g].re.test(line)) { gradeHit = GRADE_WORDS[g]; break; }
+    }
+    if (/^(序号|课程代码|课程号|课程名称|课程名|学分|成绩|绩点|性质|类型)\s*$/.test(line)) continue;
+    if (/课程名称|课程代码|课程号/.test(line) && !hasDigit) continue;
+    if (!hasDigit && !gradeHit) continue;
+
+    var numSource = gradeHit ? line.replace(gradeHit.re, '').replace(/\s+$/, '') : line;
+    var tk = numSource.split(' ');
+    var k = tk.length;
+    while (k > 0 && /^\d+(\.\d+)?$/.test(tk[k-1])) k--;
+    var trailing = tk.slice(k).map(Number);
+    var namePart = tk.slice(0, k).join(' ');
+
+    if (trailing.length === 0 && !gradeHit) continue;
+
+    var info = classifyNumbers(trailing);
+    if (info.invalid) continue;
+    if (gradeHit){
+      info.scoreLabel = gradeHit.label;
+      if (info.gpa === null) info.gpa = gradeHit.gpa;
+      info.warn = true;
+      namePart = namePart.replace(gradeHit.re, '').trim();
+    }
+    var name = cleanCourseName(namePart);
+    if (!name && info.credits === null && info.gpa === null) continue;
+    if (!name) name = '(未识别课程名)';
+
+    if (info.gpa === null && info.score !== null){ info.gpa = scoreToGpa(info.score); info.warn = true; }
+
+    rows.push({
+      name: name,
+      credits: info.credits,
+      gpa: info.gpa,
+      score: info.score,
+      scoreLabel: info.scoreLabel || null,
+      warn: !!info.warn
+    });
+  }
+
+  // 去重（同名同分）
+  var out = [], seen = {};
+  for (var r = 0; r < rows.length; r++){
+    var key = rows[r].name + '|' + rows[r].credits + '|' + rows[r].gpa + '|' + rows[r].score;
+    if (seen[key]) continue;
+    seen[key] = 1;
+    out.push(rows[r]);
+  }
+  return out;
+}
+
+/* Excel / 网页表格粘贴：制表符分隔，列序不限，自动识别 课程名 / 学分 / 成绩 / 绩点 */
+function matchGradeWord(s){
+  for (var i = 0; i < GRADE_WORDS.length; i++){
+    if (GRADE_WORDS[i].re.test(s)) return GRADE_WORDS[i];
+  }
+  return null;
+}
+function parseTableText(text){
+  var rows = [];
+  if (!text) return rows;
+  var lines = normalizeDigits(text).split(/\r?\n/);
+  for (var i = 0; i < lines.length; i++){
+    var line = lines[i];
+    if (!line.trim() || !/\t/.test(line)) continue;
+    var cells = line.split('\t').map(function(s){ return s.replace(/\s+/g, ' ').trim(); });
+    var name = '', nums = [], grade = null;
+    for (var c = 0; c < cells.length; c++){
+      var cell = cells[c];
+      if (!cell) continue;
+      if (/^-?\d+(\.\d+)?$/.test(cell)) { nums.push(Number(cell)); continue; }
+      var gw = matchGradeWord(cell);
+      if (gw && !grade) { grade = gw; continue; }
+      if (!name) name = cell;
+    }
+    if (!name || /^(课程名称|课程名|课程|学分|绩点|成绩|序号|备注|合计)$/.test(name)) continue;
+    var info = classifyNumbers(nums);
+    if (grade && info.gpa === null) info.gpa = grade.gpa;
+    if (info.gpa === null && info.score !== null){ info.gpa = scoreToGpa(info.score); info.warn = true; }
+    rows.push({ name: cleanCourseName(name), credits: info.credits, gpa: info.gpa, score: info.score, warn: true });
+  }
+  return rows;
+}
+/* ==PARSER_END== */
+
+/* ============================================================
+ * 状态
+ * ========================================================== */
+var STORE_KEY = 'gpa_calculator_v1';
+var state = {
+  semesters: [], active: 0, showScore: false,
+  gpaRule: { name: RULE_PRESETS[0].name, bands: DEFAULT_BANDS.slice() }
+};
+
+function blankCourse(o){
+  o = o || {};
+  return {
+    id: nid('c'),
+    name: o.name || '',
+    credits: (o.credits === undefined ? null : o.credits),
+    gpa: (o.gpa === undefined ? null : o.gpa),
+    score: (o.score === undefined ? null : o.score),
+    counted: o.counted === undefined ? true : !!o.counted,
+    needCheck: !!o.needCheck,
+    note: o.note || ''
+  };
+}
+var YEAR_NAMES = ['大一','大二','大三','大四','大五','大六','大七','大八'];
+var YEAR_SUGGEST = ['大一','大二','大三','大四','大五','第一学年','第二学年','第三学年','第四学年','第五学年'];
+function defaultYear(index){ return YEAR_NAMES[Math.floor(index / 2)] || ('第' + (Math.floor(index / 2) + 1) + '学年'); }
+
+function blankSemester(name, courses, year, idx){
+  var i = (idx === undefined) ? state.semesters.length : idx;
+  return {
+    id: nid('s'),
+    name: name || ('第' + (CN[i] || (i + 1)) + '学期'),
+    year: year || defaultYear(i),
+    courses: courses || []
+  };
+}
+function activeSem(){
+  if (!state.semesters.length) state.semesters.push(blankSemester());
+  if (state.active < 0 || state.active >= state.semesters.length) state.active = 0;
+  return state.semesters[state.active];
+}
+
+/* 按「学年」把学期分组，组内按学分加权 */
+function yearGroups(){
+  var map = {}, order = [];
+  for (var i = 0; i < state.semesters.length; i++){
+    var s = state.semesters[i];
+    var y = s.year || defaultYear(i);
+    var key = '#' + y;
+    if (!map[key]) { map[key] = { name: y, sems: [], index: i }; order.push(map[key]); }
+    map[key].sems.push(s);
+  }
+  for (var j = 0; j < order.length; j++){
+    order[j].stats = aggregate(order[j].sems);
+    order[j].index = state.semesters.indexOf(order[j].sems[0]);
+  }
+  return order;
+}
+function yearStatsOf(sem){
+  var y = sem.year;
+  var list = state.semesters.filter(function(s){ return (s.year || '') === (y || ''); });
+  return aggregate(list.length ? list : [sem]);
+}
+
+function save(){
+  clearTimeout(save._t);
+  save._t = setTimeout(function(){
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e){ /* 隐私模式等 */ }
+  }, 250);
+}
+function load(){
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return false;
+    var d = JSON.parse(raw);
+    if (!d || !Array.isArray(d.semesters)) return false;
+    state.semesters = d.semesters.map(function(s, si){
+      return {
+        id: s.id || nid('s'),
+        name: s.name || '学期',
+        year: s.year || defaultYear(si),
+        courses: (s.courses || []).map(function(c){
+          return { id: c.id || nid('c'), name: c.name || '', credits: c.credits === undefined ? null : c.credits,
+                   gpa: c.gpa === undefined ? null : c.gpa, score: c.score === undefined ? null : c.score,
+                   counted: c.counted !== false, needCheck: false, note: c.note || '' };
+        })
+      };
+    });
+    state.active = d.active || 0;
+    state.showScore = !!d.showScore;
+    if (d.gpaRule && Array.isArray(d.gpaRule.bands) && d.gpaRule.bands.length){
+      var bands = d.gpaRule.bands.map(function(b){
+        return { min: Number(b.min) || 0, gpa: Number(b.gpa) || 0 };
+      }).filter(function(b){ return isFinite(b.min) && isFinite(b.gpa); });
+      if (bands.length){
+        state.gpaRule = { name: d.gpaRule.name || '自定义', bands: sortBandsDesc(bands) };
+      }
+    }
+    setActiveBands(state.gpaRule.bands);
+    return true;
+  } catch(e){ return false; }
+}
+
+/* ============================================================
+ * 统计
+ * ========================================================== */
+function semStats(sem){
+  var st = { credits:0, gpa:null, avg:null, count:0, missing:0 };
+  var wp = 0, gpCr = 0, scSum = 0, scCr = 0;
+  for (var i = 0; i < sem.courses.length; i++){
+    var c = sem.courses[i];
+    if (!c.counted) continue;
+    var k = c.credits, g = c.gpa, s = c.score;
+    if (k === null || k === undefined || k <= 0) continue;
+    st.count++;
+    st.credits += k;
+    if (g === null || g === undefined){ st.missing++; }
+    else { wp += k * g; gpCr += k; }
+    if (s !== null && s !== undefined){ scSum += k * s; scCr += k; }
+  }
+  st.gpa = gpCr > 0 ? wp / gpCr : null;
+  st.avg = scCr > 0 ? scSum / scCr : null;
+  return st;
+}
+function aggregate(sems){
+  var all = { credits:0, gpa:null, avg:null, count:0, missing:0 };
+  var wp = 0, gpCr = 0, scSum = 0, scCr = 0;
+  for (var i = 0; i < sems.length; i++){
+    var st = semStats(sems[i]);
+    all.credits += st.credits; all.count += st.count; all.missing += st.missing;
+  }
+  for (var j = 0; j < sems.length; j++){
+    var cs = sems[j].courses;
+    for (var m = 0; m < cs.length; m++){
+      var c = cs[m];
+      if (!c.counted) continue;
+      var k = c.credits;
+      if (k === null || k === undefined || k <= 0) continue;
+      if (c.gpa !== null && c.gpa !== undefined){ wp += k * c.gpa; gpCr += k; }
+      if (c.score !== null && c.score !== undefined){ scSum += k * c.score; scCr += k; }
+    }
+  }
+  all.gpa = gpCr > 0 ? wp / gpCr : null;
+  all.avg = scCr > 0 ? scSum / scCr : null;
+  return all;
+}
+
+/* ============================================================
+ * 渲染
+ * ========================================================== */
+var panel = $('panel'), tabsEl = $('tabs'), barsEl = $('bars'), yearBarsEl = $('yearBars');
+
+function renderTabs(){
+  var html = '';
+  for (var i = 0; i < state.semesters.length; i++){
+    var s = state.semesters[i], st = semStats(s);
+    html += '<button class="tab' + (i === state.active ? ' active' : '') + '" data-goto="' + i + '" title="' + esc(s.year + ' · ' + s.name) + '">'
+          + '<span class="nm">' + esc(s.name) + '</span><b>' + fmt2(st.gpa) + '</b>'
+          + (state.semesters.length > 1 ? '<span class="x" data-delsem="' + i + '" title="删除该学期">✕</span>' : '')
+          + '</button>';
+  }
+  html += '<button class="tab add" data-addsem="1">＋ 新增学期</button>';
+  tabsEl.innerHTML = html;
+}
+
+/* 学年平均绩点（同一年内的学期按学分加权） */
+function renderYears(){
+  var groups = yearGroups(), html = '', any = false;
+  for (var i = 0; i < groups.length; i++){
+    var g = groups[i], gp = g.stats.gpa;
+    if (gp !== null) any = true;
+    var w = gp === null ? 0 : Math.max(1.5, Math.min(100, gp / 5 * 100));
+    html += '<button class="bar-row strong' + (g.index === state.active ? ' active' : '') + '" data-goyear="' + i + '"'
+          + ' title="' + esc(g.name) + '：' + g.sems.length + ' 个学期 · 学分 ' + fmtNum(g.stats.credits) + '">'
+          + '<span class="bar-name">' + esc(g.name) + '</span>'
+          + '<span class="bar-track"><i style="width:' + w + '%"></i></span>'
+          + '<span class="bar-val">' + fmt2(gp) + '</span></button>';
+  }
+  if (!any) html = '<div class="bar-empty">填入学分和绩点后，这里会显示各学年对比（同学年的学期填成同一个学年名即可合并统计）。</div>';
+  yearBarsEl.innerHTML = html;
+  setText('yearCount', any ? groups.length + ' 个学年' : '');
+}
+
+function renderBars(){
+  var html = '', any = false;
+  for (var i = 0; i < state.semesters.length; i++){
+    var s = state.semesters[i], st = semStats(s);
+    var g = st.gpa;
+    if (g !== null) any = true;
+    var w = g === null ? 0 : Math.max(1.5, Math.min(100, g / 5 * 100));
+    html += '<button class="bar-row' + (i === state.active ? ' active' : '') + '" data-goto="' + i + '" title="' + esc(s.year + ' · ' + s.name) + '">'
+          + '<span class="bar-name">' + esc(s.name) + '</span>'
+          + '<span class="bar-track"><i style="width:' + w + '%"></i></span>'
+          + '<span class="bar-val">' + fmt2(g) + '</span></button>';
+  }
+  if (!any) html = '<div class="bar-empty">填入学分和绩点后，这里会显示各学期对比。</div>';
+  barsEl.innerHTML = html;
+  setText('semCount', any ? state.semesters.length + ' 个学期' : '');
+}
+
+function yearOptionsHtml(){
+  var seen = {}, list = [];
+  function add(v){ if (v && !seen[v]) { seen[v] = 1; list.push(v); } }
+  for (var i = 0; i < state.semesters.length; i++) add(state.semesters[i].year);
+  for (var j = 0; j < YEAR_SUGGEST.length; j++) add(YEAR_SUGGEST[j]);
+  return list.map(function(v){ return '<option value="' + esc(v) + '"></option>'; }).join('');
+}
+
+function rowHtml(c){
+  return '<tr data-id="' + c.id + '" class="' + (c.counted ? '' : 'off') + (c.needCheck ? ' need-check' : '') + '">'
+    + '<td class="c-name" data-label="课程"><input class="cell name" data-f="name" value="' + esc(c.name) + '" placeholder="课程名称" spellcheck="false"></td>'
+    + '<td class="c-num" data-label="学分"><input class="cell num" data-f="credits" type="number" step="0.5" min="0" inputmode="decimal" value="' + (c.credits === null ? '' : c.credits) + '" placeholder="0"></td>'
+    + '<td class="c-num" data-label="绩点"><input class="cell num hl" data-f="gpa" type="number" step="0.1" min="0" inputmode="decimal" value="' + (c.gpa === null ? '' : c.gpa) + '" placeholder="0.0" title="绩点可以自由修改"></td>'
+    + (state.showScore ? '<td class="c-num" data-label="成绩"><input class="cell num" data-f="score" type="number" step="1" min="0" max="100" inputmode="decimal" value="' + (c.score === null ? '' : c.score) + '" placeholder="--"></td>' : '')
+    + '<td class="c-flg" data-label="计入"><input type="checkbox" data-f="counted"' + (c.counted ? ' checked' : '') + ' title="取消勾选则不计入绩点"></td>'
+    + '<td class="c-del"><button class="icon-btn" data-delrow="' + c.id + '" title="删除这门课">✕</button></td>'
+    + '</tr>';
+}
+
+function renderPanel(){
+  var s = activeSem(), st = semStats(s), ys = yearStatsOf(s);
+  var html = ''
+    + '<div class="panel-head">'
+    +   '<div class="sem-title">'
+    +     '<span class="field" title="把同学年的学期填成同一个名字，就会自动汇总出学年平均绩点">'
+    +       '<label for="semYear">学年</label>'
+    +       '<input class="year-input" id="semYear" list="yearOptions" maxlength="16" value="' + esc(s.year) + '" placeholder="大一">'
+    +     '</span>'
+    +     '<input class="sem-input" id="semName" value="' + esc(s.name) + '" maxlength="24" title="点这里可以改学期名字">'
+    +     '<span class="chip hi">学期平均绩点 <b id="semGpa">' + fmt2(st.gpa) + '</b></span>'
+    +     '<span class="chip hi">学年平均绩点 <b id="yearGpa">' + fmt2(ys.gpa) + '</b></span>'
+    +     '<span class="chip">学分 <b id="semCredits">' + fmtNum(st.credits) + '</b></span>'
+    +     (state.showScore ? '<span class="chip">加权均分 <b id="semAvg">' + fmt2(st.avg) + '</b></span>' : '')
+    +   '</div>'
+    +   '<div class="panel-actions">'
+    +     '<button class="btn primary" data-act="import">🖼 图片 / 文本导入</button>'
+    +     '<button class="btn" data-act="addrow">＋ 添加课程</button>'
+    +     '<button class="btn ghost" data-act="convert" title="按当前规则「' + esc(state.gpaRule.name) + '」把百分制成绩折算成绩点（只填还没填绩点的课）">成绩→绩点</button>'
+    +     '<button class="btn ghost" data-act="rule" title="修改成绩→绩点的换算规则（当前：' + esc(state.gpaRule.name) + '）">⚙ 换算规则</button>'
+    +     '<button class="btn ghost" data-act="togglescore">' + (state.showScore ? '隐藏成绩列' : '显示成绩列') + '</button>'
+    +     (state.semesters.length > 1 ? '<button class="btn ghost danger" data-act="delsem">删除学期</button>' : '')
+    +   '</div>'
+    +   '<datalist id="yearOptions">' + yearOptionsHtml() + '</datalist>'
+    + '</div>'
+    + '<div class="table-wrap">'
+    +   '<table class="courses">'
+    +     '<thead><tr><th class="c-name">课程名称</th><th class="c-num">学分</th><th class="c-num">绩点</th>'
+    +       (state.showScore ? '<th class="c-num">成绩</th>' : '')
+    +       '<th class="c-flg">计入</th><th class="c-del"></th></tr></thead>'
+    +     '<tbody>' + s.courses.map(rowHtml).join('') + '</tbody>'
+    +   '</table>'
+    +   (s.courses.length ? '' : '<div class="empty">还没有课程 · 点「＋ 添加课程」手动录入，或点「🖼 图片 / 文本导入」上传成绩单截图</div>')
+    + '</div>'
+    + '<div class="panel-foot">'
+    +   '<span>' + (st.missing ? '⚠ 有 ' + st.missing + ' 门课只填了学分、没填绩点，未参与计算' : '学分 × 绩点求和 ÷ 总学分') + '</span>'
+    +   '<span>共 ' + s.courses.length + ' 行 · 计入 ' + st.count + ' 门</span>'
+    + '</div>';
+  panel.innerHTML = html;
+}
+
+function updateComputed(){
+  var all = aggregate(state.semesters);
+  var gv = $('overallGpa');
+  gv.textContent = fmt2(all.gpa);
+  gv.classList.toggle('empty', all.gpa === null);
+  $('overallMeta').textContent = (all.count
+    ? '总学分 ' + fmtNum(all.credits) + ' · ' + all.count + ' 门课 · ' + state.semesters.length + ' 个学期' + (all.missing ? ' · ' + all.missing + ' 门缺绩点' : '')
+    : '还没有数据');
+
+  var st = semStats(activeSem());
+  setText('semGpa', fmt2(st.gpa));
+  setText('yearGpa', fmt2(yearStatsOf(activeSem()).gpa));
+  setText('semCredits', fmtNum(st.credits));
+  setText('semAvg', fmt2(st.avg));
+  renderTabs();
+  renderYears();
+  renderBars();
+  save();
+}
+function renderAll(){ renderPanel(); updateComputed(); }
+
+/* ============================================================
+ * 表格交互
+ * ========================================================== */
+panel.addEventListener('input', function(e){
+  var tr = e.target.closest('tr[data-id]');
+  if (!tr) return;
+  var id = tr.getAttribute('data-id');
+  var sem = activeSem();
+  var c = null;
+  for (var i = 0; i < sem.courses.length; i++){ if (sem.courses[i].id === id) { c = sem.courses[i]; break; } }
+  if (!c) return;
+  var f = e.target.getAttribute('data-f');
+  if (!f) return;
+
+  if (f === 'name') c.name = e.target.value;
+  else if (f === 'counted'){
+    c.counted = e.target.checked;
+    tr.classList.toggle('off', !c.counted);
+  } else {
+    c[f] = numOrNull(e.target.value);
+    if (f === 'gpa' && c.needCheck){ c.needCheck = false; tr.classList.remove('need-check'); }
+  }
+  updateComputed();
+});
+
+panel.addEventListener('keydown', function(e){
+  if (e.key !== 'Enter') return;
+  var inp = e.target;
+  if (!inp.classList || !inp.classList.contains('cell')) return;
+  e.preventDefault();
+  var tr = inp.closest('tr');
+  var f = inp.getAttribute('data-f');
+  var next = tr.nextElementSibling;
+  if (!next){
+    var sem = activeSem();
+    sem.courses.push(blankCourse());
+    renderPanel();
+    var rows = panel.querySelectorAll('tbody tr');
+    var last = rows[rows.length - 1];
+    var target = last && last.querySelector('[data-f="' + f + '"]');
+    if (target) target.focus();
+  } else {
+    var t2 = next.querySelector('[data-f="' + f + '"]');
+    if (t2){ t2.focus(); t2.select && t2.select(); }
+  }
+  updateComputed();
+});
+
+panel.addEventListener('click', function(e){
+  var del = e.target.closest('[data-delrow]');
+  if (del){
+    var id = del.getAttribute('data-delrow');
+    var sem = activeSem();
+    sem.courses = sem.courses.filter(function(c){ return c.id !== id; });
+    renderPanel(); updateComputed();
+    return;
+  }
+  var btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  var act = btn.getAttribute('data-act');
+  if (act === 'addrow'){
+    var s = activeSem();
+    s.courses.push(blankCourse());
+    renderPanel(); updateComputed();
+    var rows = panel.querySelectorAll('tbody tr');
+    var lastRow = rows[rows.length - 1];
+    if (lastRow) lastRow.scrollIntoView({ block:'nearest' });
+    var ni = lastRow && lastRow.querySelector('[data-f="name"]');
+    if (ni) ni.focus();
+  } else if (act === 'import'){
+    openImport();
+  } else if (act === 'togglescore'){
+    state.showScore = !state.showScore;
+    renderPanel(); updateComputed();
+  } else if (act === 'convert'){
+    convertScores();
+  } else if (act === 'rule'){
+    openRuleModal();
+  } else if (act === 'delsem'){
+    var sem = activeSem();
+    if (!confirm('确定删除「' + sem.name + '」及其 ' + sem.courses.length + ' 门课程？此操作不可撤销。')) return;
+    state.semesters.splice(state.active, 1);
+    if (!state.semesters.length) state.semesters.push(blankSemester('第一学期'));
+    if (state.active >= state.semesters.length) state.active = state.semesters.length - 1;
+    renderAll();
+    toast('已删除学期');
+  }
+});
+
+// 学期名（改名不重绘表格，避免丢焦点）
+panel.addEventListener('input', function(e){
+  if (e.target.id === 'semName'){
+    activeSem().name = e.target.value;
+    renderTabs(); renderBars(); save();
+  } else if (e.target.id === 'semYear'){
+    activeSem().year = e.target.value;
+    updateComputed();
+  }
+});
+
+// 从 Excel 粘贴多行
+panel.addEventListener('paste', function(e){
+  var txt = (e.clipboardData || window.clipboardData).getData('text');
+  if (!txt || !/\t/.test(txt)) return;
+  var rows = parseTableText(txt);
+  if (!rows.length) return;
+  e.preventDefault();
+  importRows(activeSem(), rows, 'append');
+  renderPanel(); updateComputed();
+  toast('已从剪贴板导入 ' + rows.length + ' 门课，请核对');
+});
+
+/* 学期切换 */
+tabsEl.addEventListener('click', function(e){
+  var x = e.target.closest('[data-delsem]');
+  if (x){
+    var i = Number(x.getAttribute('data-delsem'));
+    var s = state.semesters[i];
+    if (!s) return;
+    if (!confirm('确定删除「' + s.name + '」及其 ' + s.courses.length + ' 门课程？')) return;
+    state.semesters.splice(i, 1);
+    if (!state.semesters.length) state.semesters.push(blankSemester('第一学期'));
+    if (state.active >= state.semesters.length) state.active = state.semesters.length - 1;
+    renderAll(); toast('已删除学期');
+    return;
+  }
+  if (e.target.closest('[data-addsem]')){
+    state.semesters.push(blankSemester());
+    state.active = state.semesters.length - 1;
+    renderAll();
+    var sn = $('semName'); if (sn){ sn.focus(); sn.select(); }
+    return;
+  }
+  var go = e.target.closest('[data-goto]');
+  if (go){
+    state.active = Number(go.getAttribute('data-goto'));
+    renderAll();
+  }
+});
+barsEl.addEventListener('click', function(e){
+  var go = e.target.closest('[data-goto]');
+  if (go){ state.active = Number(go.getAttribute('data-goto')); renderAll(); }
+});
+// 点学年条 → 跳到该学年的第一个学期
+yearBarsEl.addEventListener('click', function(e){
+  var b = e.target.closest('[data-goyear]');
+  if (!b) return;
+  var g = yearGroups()[Number(b.getAttribute('data-goyear'))];
+  if (g){ state.active = g.index; renderAll(); }
+});
+
+/* 成绩 → 绩点 */
+function convertScores(){
+  var sem = activeSem(), n = 0;
+  for (var i = 0; i < sem.courses.length; i++){
+    var c = sem.courses[i];
+    if (c.gpa === null && c.score !== null && c.score !== undefined){
+      c.gpa = scoreToGpa(c.score); n++; c.needCheck = false;
+    }
+  }
+  renderPanel(); updateComputed();
+  toast(n ? '已按「' + state.gpaRule.name + '」折算 ' + n + ' 门课，可继续手改' : '没有需要折算的课程（绩点已填或成绩为空）');
+}
+
+/* ============================================================
+ * 换算规则弹窗
+ * ========================================================== */
+var ruleDraft = [];
+
+function openRuleModal(){
+  ruleDraft = state.gpaRule.bands.map(function(b){ return { min: Number(b.min), gpa: Number(b.gpa) }; });
+  var p = presetOf(ruleDraft);
+  $('rulePreset').innerHTML = RULE_PRESETS.map(function(r){
+    return '<option value="' + r.id + '">' + esc(r.name) + '</option>';
+  }).join('') + '<option value="custom">自定义（当前规则）</option>';
+  $('rulePreset').value = p ? p.id : 'custom';
+  renderRuleDraft();
+  $('ruleModal').classList.add('open');
+}
+function rulePreviewText(){
+  var samples = [95, 88, 83, 79, 76, 73, 69, 65, 61, 55];
+  return '示例：' + samples.map(function(v){
+    var g = gpaFromBands(v, ruleDraft);
+    return v + '→' + (g === null ? '--' : (+g.toFixed(2)));
+  }).join('  ');
+}
+function renderRuleDraft(){
+  var rows = '<div class="rule-head"><span>分数 ≥</span><span>绩点</span><span></span></div>';
+  for (var i = 0; i < ruleDraft.length; i++){
+    var b = ruleDraft[i];
+    rows += '<div class="rule-row">'
+      + '<input class="cell rule-min" type="number" min="0" max="100" step="1" inputmode="decimal" data-ri="' + i + '" data-rf="min" value="' + b.min + '">'
+      + '<input class="cell rule-gpa" type="number" min="0" max="20" step="0.1" inputmode="decimal" data-ri="' + i + '" data-rf="gpa" value="' + b.gpa + '">'
+      + '<button class="icon-btn" data-rdel="' + i + '" title="删除这一档">✕</button>'
+      + '</div>';
+  }
+  $('ruleTable').innerHTML = rows;
+  $('rulePreview').textContent = rulePreviewText();
+}
+function syncRulePreset(){
+  var p = presetOf(ruleDraft);
+  $('rulePreset').value = p ? p.id : 'custom';
+}
+$('ruleTable').addEventListener('input', function(e){
+  var i = Number(e.target.getAttribute('data-ri'));
+  var f = e.target.getAttribute('data-rf');
+  if (!f || !ruleDraft[i]) return;
+  ruleDraft[i][f] = numOrNull(e.target.value);
+  $('rulePreview').textContent = rulePreviewText();
+  syncRulePreset();
+});
+$('ruleTable').addEventListener('click', function(e){
+  var d = e.target.closest('[data-rdel]');
+  if (!d) return;
+  if (ruleDraft.length <= 1){ toast('至少要保留一档'); return; }
+  ruleDraft.splice(Number(d.getAttribute('data-rdel')), 1);
+  renderRuleDraft();
+  syncRulePreset();
+});
+$('rulePreset').addEventListener('change', function(){
+  var id = $('rulePreset').value;
+  if (id === 'custom') return;
+  for (var i = 0; i < RULE_PRESETS.length; i++){
+    if (RULE_PRESETS[i].id === id){
+      ruleDraft = RULE_PRESETS[i].bands.map(function(b){ return { min: b.min, gpa: b.gpa }; });
+      renderRuleDraft();
+      break;
+    }
+  }
+});
+$('btnAddBand').addEventListener('click', function(){
+  var min = 0;
+  for (var i = 0; i < ruleDraft.length; i++){
+    var v = Number(ruleDraft[i].min);
+    if (isFinite(v) && v > 0 && (min === 0 || v < min)) min = v;
+  }
+  ruleDraft.push({ min: Math.max(0, min - 5), gpa: 0 });
+  renderRuleDraft();
+  syncRulePreset();
+});
+$('btnRuleReset').addEventListener('click', function(){
+  ruleDraft = DEFAULT_BANDS.map(function(b){ return { min: b.min, gpa: b.gpa }; });
+  renderRuleDraft();
+  syncRulePreset();
+});
+$('btnRuleSave').addEventListener('click', function(){
+  var bands = [], seen = {}, dup = false, bad = false;
+  for (var i = 0; i < ruleDraft.length; i++){
+    var m = Number(ruleDraft[i].min), g = Number(ruleDraft[i].gpa);
+    if (!isFinite(m) || !isFinite(g) || m < 0 || m > 100 || g < 0 || g > 20){ bad = true; continue; }
+    if (seen[m]) dup = true;
+    seen[m] = 1;
+    bands.push({ min: m, gpa: g });
+  }
+  if (bad){ toast('分数请填 0~100，绩点请填 0~20'); return; }
+  if (dup){ toast('有两档的分数下界重复了，请改一下'); return; }
+  if (!bands.length){ toast('至少要有一档'); return; }
+  bands = sortBandsDesc(bands);
+  var p = presetOf(bands);
+  state.gpaRule = { name: p ? p.name : '自定义规则', bands: bands };
+  setActiveBands(bands);
+  closeModal('ruleModal');
+  renderPanel(); updateComputed();
+  toast('换算规则已保存：' + state.gpaRule.name);
+});
+
+/* ============================================================
+ * 导入
+ * ========================================================== */
+var pendingFiles = [];
+var parsedRows = [];
+var workerCache = {};
+
+function openImport(){
+  var s = activeSem();
+  $('targetInfo').textContent = '导入目标：' + s.name + '（当前 ' + s.courses.length + ' 门课）';
+  // 每次重新进入都清掉上一次的识别原文 / 解析结果，一切从头开始
+  $('rawText').value = '';
+  parsedRows = [];
+  $('ocrStatus').textContent = '';
+  $('ocrProgress').style.width = '0%';
+  renderPreview();
+  $('importModal').classList.add('open');
+}
+function closeModal(id){ $(id).classList.remove('open'); }
+
+document.addEventListener('click', function(e){
+  var c = e.target.closest('[data-close]');
+  if (c) closeModal(c.getAttribute('data-close'));
+  if (e.target.classList && e.target.classList.contains('modal')) e.target.classList.remove('open');
+});
+
+/* 拖拽 / 选择 */
+var dz = $('dropzone'), fi = $('fileInput');
+dz.addEventListener('click', function(){ fi.click(); });
+fi.addEventListener('change', function(){ addFiles(fi.files); fi.value = ''; });
+['dragenter','dragover'].forEach(function(ev){
+  dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.add('over'); });
+});
+['dragleave','drop'].forEach(function(ev){
+  dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.remove('over'); });
+});
+dz.addEventListener('drop', function(e){
+  if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
+});
+function addFiles(list){
+  for (var i = 0; i < list.length; i++){
+    var f = list[i];
+    if (!f) continue;
+    if (f.type && f.type.indexOf('image/') !== 0) continue;
+    try { f._url = URL.createObjectURL(f); } catch(err){ f._url = ''; }
+    pendingFiles.push(f);
+  }
+  renderThumbs();
+}
+function renderThumbs(){
+  var html = '';
+  for (var i = 0; i < pendingFiles.length; i++){
+    html += '<div class="thumb"><img src="' + pendingFiles[i]._url + '" alt=""><button data-rmthumb="' + i + '">✕</button></div>';
+  }
+  $('thumbs').innerHTML = html;
+}
+$('thumbs').addEventListener('click', function(e){
+  var b = e.target.closest('[data-rmthumb]');
+  if (!b) return;
+  var i = Number(b.getAttribute('data-rmthumb'));
+  try { URL.revokeObjectURL(pendingFiles[i]._url); } catch(err){}
+  pendingFiles.splice(i, 1);
+  renderThumbs();
+});
+/* 图像预处理 */
+function preprocessImage(file, enhance){
+  return new Promise(function(resolve, reject){
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function(){
+      try {
+        var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+        var scale = 1;
+        if (enhance && w < 1400) scale = Math.min(2.5, 1400 / w);
+        var cw = Math.round(w * scale), ch = Math.round(h * scale);
+        var cv = document.createElement('canvas');
+        cv.width = cw; cv.height = ch;
+        var ctx = cv.getContext('2d');
+        ctx.drawImage(img, 0, 0, cw, ch);
+        if (enhance){
+          var data = ctx.getImageData(0, 0, cw, ch), d = data.data;
+          for (var i = 0; i < d.length; i += 4){
+            var g = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+            g = (g - 128) * 1.45 + 128;
+            g = g < 0 ? 0 : (g > 255 ? 255 : g);
+            d[i] = d[i+1] = d[i+2] = g;
+          }
+          ctx.putImageData(data, 0, 0);
+        }
+        URL.revokeObjectURL(url);
+        resolve(cv);
+      } catch(err){ URL.revokeObjectURL(url); reject(err); }
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error('图片读取失败')); };
+    img.src = url;
+  });
+}
+
+function loadTesseract(){
+  return new Promise(function(resolve, reject){
+    if (window.Tesseract) return resolve(window.Tesseract);
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+    s.onload = function(){ window.Tesseract ? resolve(window.Tesseract) : reject(new Error('引擎加载异常')); };
+    s.onerror = function(){ reject(new Error('无法加载识别引擎，请检查网络后重试（也可以直接在「识别原文」里粘贴文字）')); };
+    document.head.appendChild(s);
+  });
+}
+
+$('btnOcr').addEventListener('click', function(){
+  if (!pendingFiles.length){ toast('请先选择成绩单图片'); return; }
+  runOcr();
+});
+
+async function runOcr(){
+  var btn = $('btnOcr');
+  btn.disabled = true;
+  var bar = $('ocrProgress');
+  bar.style.width = '2%';
+  $('ocrStatus').textContent = '准备中…';
+  try {
+    var T = await loadTesseract();
+    var langs = $('optEn').checked ? ['chi_sim','eng'] : ['chi_sim'];
+    var key = langs.join('+');
+    if (!workerCache[key]){
+      $('ocrStatus').textContent = '首次使用需下载语言包，请稍候…';
+      workerCache[key] = await T.createWorker(langs, 1, {
+        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
+        corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1',
+        logger: function(m){
+          if (m.status === 'recognizing text' && typeof m.progress === 'number'){
+            bar.style.width = Math.max(3, Math.round(m.progress * 100)) + '%';
+          }
+          if (m.status) $('ocrStatus').textContent = m.status + (typeof m.progress === 'number' && m.progress > 0 && m.progress < 1 ? ' ' + Math.round(m.progress * 100) + '%' : '');
+        }
+      });
+    }
+    var worker = await workerCache[key];
+    var raw = $('rawText').value ? $('rawText').value + '\n' : '';
+    for (var i = 0; i < pendingFiles.length; i++){
+      $('ocrStatus').textContent = '识别第 ' + (i + 1) + ' / ' + pendingFiles.length + ' 张…';
+      bar.style.width = '5%';
+      var cv = await preprocessImage(pendingFiles[i], $('optEnhance').checked);
+      var res = await worker.recognize(cv.toDataURL('image/png'));
+      raw += (res && res.data ? res.data.text : '') + '\n';
+    }
+    $('rawText').value = raw.replace(/\n{3,}/g, '\n\n').trim();
+    bar.style.width = '100%';
+    $('ocrStatus').textContent = '识别完成，请核对原文';
+    // 已识别的图片出队，避免重复识别；需要重来可重新选图
+    pendingFiles.forEach(function(f){ try { URL.revokeObjectURL(f._url); } catch(e){} });
+    pendingFiles = [];
+    renderThumbs();
+    doParse();
+  } catch(err){
+    $('ocrStatus').textContent = '识别失败';
+    bar.style.width = '0%';
+    toast(err && err.message ? err.message : '识别失败，可手动粘贴文字导入');
+  } finally {
+    btn.disabled = false;
+    setTimeout(function(){ $('ocrProgress').style.width = '0%'; }, 1200);
+  }
+}
+
+function doParse(){
+  var txt = $('rawText').value;
+  parsedRows = parseScoreText(txt);
+  if (!parsedRows.length){
+    var t = parseTableText(txt);
+    if (t.length) parsedRows = t;
+  }
+  renderPreview();
+}
+$('btnReparse').addEventListener('click', doParse);
+
+function renderPreview(){
+  var pv = $('preview');
+  if (!parsedRows.length){
+    pv.classList.remove('show');
+    pv.innerHTML = '';
+    $('parseInfo').textContent = $('rawText').value.trim()
+      ? '没有解析出课程行 —— 可以在原文里把课程、学分、绩点整理成一行（空格分隔），再点「重新解析」'
+      : '尚未解析';
+    return;
+  }
+  var warn = parsedRows.filter(function(r){ return r.warn; }).length;
+  $('parseInfo').textContent = '解析出 ' + parsedRows.length + ' 行' + (warn ? '，其中 ' + warn + ' 行需重点核对' : '');
+  var html = '<table><thead><tr><th>课程名称</th><th>学分</th><th>绩点</th><th>成绩</th><th>提示</th></tr></thead><tbody>';
+  for (var i = 0; i < parsedRows.length; i++){
+    var r = parsedRows[i];
+    html += '<tr class="' + (r.warn ? 'warnrow' : '') + '">'
+      + '<td>' + esc(r.name) + '</td>'
+      + '<td class="n">' + (r.credits === null ? '<span class="badge w">缺</span>' : fmtNum(r.credits)) + '</td>'
+      + '<td class="n">' + (r.gpa === null ? '<span class="badge w">缺</span>' : r.gpa.toFixed(2)) + '</td>'
+      + '<td class="n">' + (r.scoreLabel ? esc(r.scoreLabel) : (r.score === null ? '—' : r.score)) + '</td>'
+      + '<td>' + (r.warn ? '<span class="badge w">请核对</span>' : '<span class="badge">正常</span>') + '</td>'
+      + '</tr>';
+  }
+  html += '</tbody></table>';
+  pv.innerHTML = html;
+  pv.classList.add('show');
+}
+
+function importRows(sem, rows, mode){
+  var made = rows.map(function(r){
+    return blankCourse({ name: r.name, credits: r.credits, gpa: r.gpa, score: r.score, counted: true, needCheck: !!r.warn });
+  });
+  if (mode === 'replace') sem.courses = made;
+  else sem.courses = sem.courses.concat(made);
+  return made.length;
+}
+$('btnAppend').addEventListener('click', function(){
+  if (!parsedRows.length){ toast('还没有可导入的解析结果'); return; }
+  var n = importRows(activeSem(), parsedRows, 'append');
+  closeModal('importModal');
+  renderPanel(); updateComputed();
+  toast('已追加 ' + n + ' 门课，黄色高亮的行请核对');
+});
+$('btnReplace').addEventListener('click', function(){
+  if (!parsedRows.length){ toast('还没有可导入的解析结果'); return; }
+  if (!confirm('用解析结果替换「' + activeSem().name + '」现有的全部课程？')) return;
+  var n = importRows(activeSem(), parsedRows, 'replace');
+  closeModal('importModal');
+  renderPanel(); updateComputed();
+  toast('已替换为 ' + n + ' 门课');
+});
+
+/* ============================================================
+ * 顶栏功能
+ * ========================================================== */
+$('btnHelp').addEventListener('click', function(){ $('helpModal').classList.add('open'); });
+
+$('btnDemo').addEventListener('click', function(){
+  if (state.semesters.some(function(s){ return s.courses.length; }) && !confirm('载入示例会覆盖当前数据，继续？')) return;
+  var demo = [
+    ['大一上', '大一', [
+      blankCourse({ name:'高等数学(上)', credits:5, gpa:4.0, score:92 }),
+      blankCourse({ name:'大学英语(一)', credits:3, gpa:3.7, score:86 }),
+      blankCourse({ name:'工程图学', credits:2.5, gpa:3.3, score:83 }),
+      blankCourse({ name:'思想道德与法治', credits:3, gpa:4.0, score:90, counted:false })
+    ]],
+    ['大一下', '大一', [
+      blankCourse({ name:'高等数学(下)', credits:5, gpa:3.7, score:87 }),
+      blankCourse({ name:'线性代数', credits:3, gpa:4.0, score:95 }),
+      blankCourse({ name:'大学物理', credits:4, gpa:3.0, score:79 }),
+      blankCourse({ name:'程序设计基础', credits:3, gpa:3.7, score:88 })
+    ]],
+    ['大二上', '大二', [
+      blankCourse({ name:'概率论与数理统计', credits:3, gpa:3.7, score:86 }),
+      blankCourse({ name:'数字电子技术', credits:4, gpa:3.3, score:83 }),
+      blankCourse({ name:'信号与系统', credits:3.5, gpa:3.0, score:78 })
+    ]]
+  ];
+  state.semesters = demo.map(function(d, i){ return blankSemester(d[0], d[2], d[1], i); });
+  state.active = 0;
+  renderAll();
+  toast('已载入示例数据，可随意修改');
+});
+
+$('btnReset').addEventListener('click', function(){
+  if (!confirm('确定清空全部学期和课程？建议先点「备份」导出保存。')) return;
+  state.semesters = [];
+  state.semesters.push(blankSemester('第一学期'));
+  state.active = 0;
+  renderAll();
+  toast('已清空');
+});
+
+function download(filename, content, mime){
+  var blob = new Blob([content], { type: mime || 'text/plain;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 800);
+}
+function stamp(){
+  var d = new Date(), p = function(n){ return (n < 10 ? '0' : '') + n; };
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
+}
+
+$('btnBackup').addEventListener('click', function(){
+  download('绩点备份-' + stamp() + '.json', JSON.stringify(state, null, 2), 'application/json');
+  toast('已导出备份文件');
+});
+$('btnRestore').addEventListener('click', function(){ $('restoreInput').click(); });
+$('restoreInput').addEventListener('change', function(e){
+  var f = e.target.files && e.target.files[0];
+  if (!f) return;
+  var fr = new FileReader();
+  fr.onload = function(){
+    try {
+      var d = JSON.parse(fr.result);
+      if (!d || !Array.isArray(d.semesters)) throw new Error('文件格式不对');
+      if (!confirm('用备份文件覆盖当前数据？')) return;
+      state.semesters = d.semesters.map(function(s, si){
+        return { id: nid('s'), name: s.name || '学期', year: s.year || defaultYear(si),
+          courses: (s.courses || []).map(function(c){
+            return blankCourse({ name: c.name, credits: c.credits, gpa: c.gpa, score: c.score, counted: c.counted });
+          }) };
+      });
+      if (!state.semesters.length) state.semesters.push(blankSemester('第一学期'));
+      if (d.gpaRule && Array.isArray(d.gpaRule.bands) && d.gpaRule.bands.length){
+        state.gpaRule = { name: d.gpaRule.name || '自定义规则',
+                          bands: sortBandsDesc(d.gpaRule.bands.map(function(b){ return { min: Number(b.min) || 0, gpa: Number(b.gpa) || 0 }; })) };
+        setActiveBands(state.gpaRule.bands);
+      }
+      state.active = 0;
+      renderAll();
+      toast('已恢复备份数据');
+    } catch(err){ toast('恢复失败：' + err.message); }
+  };
+  fr.readAsText(f);
+  e.target.value = '';
+});
+
+$('btnCsv').addEventListener('click', function(){
+  var lines = ['学年,学期,课程名称,学分,绩点,成绩,是否计入'];
+  function esc2(v){ return '"' + String(v === null || v === undefined ? '' : v).replace(/"/g, '""') + '"'; }
+  var groups = yearGroups();
+  for (var g = 0; g < groups.length; g++){
+    lines.push([esc2('【学年平均绩点】' + groups[g].name), '', '', fmtNum(groups[g].stats.credits), fmt2(groups[g].stats.gpa), '', ''].join(','));
+    for (var i = 0; i < groups[g].sems.length; i++){
+      var s = groups[g].sems[i];
+      for (var j = 0; j < s.courses.length; j++){
+        var c = s.courses[j];
+        lines.push([s.year, s.name, c.name, c.credits === null ? '' : c.credits,
+                    c.gpa === null ? '' : c.gpa, c.score === null ? '' : c.score, c.counted ? '是' : '否']
+                    .map(esc2).join(','));
+      }
+      var st = semStats(s);
+      lines.push([esc2(s.year), esc2('【' + s.name + '】学期平均绩点'), '', fmtNum(st.credits), fmt2(st.gpa), '', ''].join(','));
+    }
+  }
+  var all = aggregate(state.semesters);
+  lines.push([esc2('【总平均绩点】'), '', '', fmtNum(all.credits), fmt2(all.gpa), '', ''].join(','));
+  download('绩点统计-' + stamp() + '.csv', '\ufeff' + lines.join('\r\n'), 'text/csv;charset=utf-8');
+  toast('已导出 CSV，可直接用 Excel 打开');
+});
+
+/* ============================================================
+ * 启动
+ * ========================================================== */
+if (!load() || !state.semesters.length){
+  state.semesters = [];
+  state.semesters.push(blankSemester('第一学期'));
+  state.active = 0;
+}
+setActiveBands(state.gpaRule.bands);
+renderAll();
+
+})();
+</script>
+</body>
+</html>

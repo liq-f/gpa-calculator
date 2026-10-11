@@ -1,0 +1,22 @@
+{
+  "name": "gpa-calculator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "单文件网页版绩点计算器：学期 / 学年 / 总平均绩点，支持成绩单截图 OCR 识别与可自定义的成绩-绩点换算规则",
+  "keywords": ["gpa", "calculator", "绩点", "绩点计算器", "ocr", "tesseract"],
+  "homepage": "https://liq-f.github.io/gpa-calculator/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/liq-f/gpa-calculator.git"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "node tests/unit.js && node tests/integration.js",
+    "test:unit": "node tests/unit.js",
+    "test:integration": "node tests/integration.js",
+    "test:ocr": "node tests/ocr-e2e.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

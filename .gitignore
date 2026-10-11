@@ -1,0 +1,11 @@
+# 测试与临时产物
+tests/.tmp/
+node_modules/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
