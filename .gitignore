@@ -2,6 +2,9 @@
 tests/.tmp/
 node_modules/
 
+# 小红书宣传素材（只留本地，不进仓库）
+小红书素材/
+
 # 编辑器 / 系统
 .vscode/
 .idea/
